@@ -267,6 +267,7 @@ public class MQClientInstance {
             }, 1000 * 10, 1000 * 60 * 2, TimeUnit.MILLISECONDS);
         }
 
+        //默认30s从nameserver拉取路由信息，根据topic
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -279,6 +280,7 @@ public class MQClientInstance {
             }
         }, 10, this.clientConfig.getPollNameServerInterval(), TimeUnit.MILLISECONDS);
 
+        //定时向所有的broker发送心跳
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -602,6 +604,7 @@ public class MQClientInstance {
         }
     }
 
+    //从nameServer拉取路由信息，isDefault是否要拉取默认值，发送消息的时候需要拉取默认值，跟新路由信息的时候不需要拉取默认值
     public boolean updateTopicRouteInfoFromNameServer(final String topic, boolean isDefault,
         DefaultMQProducer defaultMQProducer) {
         try {
@@ -1074,6 +1077,7 @@ public class MQClientInstance {
     }
 
     public List<String> findConsumerIdList(final String topic, final String group) {
+        //随机获取一个broker地址
         String brokerAddr = this.findBrokerAddrByTopic(topic);
         if (null == brokerAddr) {
             this.updateTopicRouteInfoFromNameServer(topic);
@@ -1082,6 +1086,7 @@ public class MQClientInstance {
 
         if (null != brokerAddr) {
             try {
+                //获取消费者列表
                 return this.mQClientAPIImpl.getConsumerIdListByGroup(brokerAddr, group, 3000);
             } catch (Exception e) {
                 log.warn("getConsumerIdListByGroup exception, " + brokerAddr + " " + group, e);
@@ -1096,8 +1101,10 @@ public class MQClientInstance {
         if (topicRouteData != null) {
             List<BrokerData> brokers = topicRouteData.getBrokerDatas();
             if (!brokers.isEmpty()) {
+                //找该topic下任何一个broker
                 int index = random.nextInt(brokers.size());
                 BrokerData bd = brokers.get(index % brokers.size());
+                //获取该broker的主节点地址，获取不到主节点，任意获取
                 return bd.selectBrokerAddr();
             }
         }

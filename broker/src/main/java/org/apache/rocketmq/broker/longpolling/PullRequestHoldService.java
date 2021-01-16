@@ -136,6 +136,7 @@ public class PullRequestHoldService extends ServiceThread {
                             match = request.getMessageFilter().isMatchedByCommitLog(null, properties);
                         }
 
+                        //获取到数据
                         if (match) {
                             try {
                                 this.brokerController.getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
@@ -147,6 +148,7 @@ public class PullRequestHoldService extends ServiceThread {
                         }
                     }
 
+                    //超时，默认15s
                     if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
                         try {
                             this.brokerController.getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
