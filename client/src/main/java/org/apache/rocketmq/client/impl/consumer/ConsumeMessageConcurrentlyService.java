@@ -256,6 +256,10 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         final ConsumeConcurrentlyContext context,
         final ConsumeRequest consumeRequest
     ) {
+        // 根据消息监昕器返回的结果 计算 acklndex
+        // 如果返回 ONSUME_SUCCESS,acklndex 设置为 msgs.size （） ，
+        // 如果返回 RECONSUME_LATER, acklndex =-1
+        // 这是为下文发送 msg back ACK ）消息做准备
         int ackIndex = context.getAckIndex();
 
         if (consumeRequest.getMsgs().isEmpty())
@@ -300,7 +304,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
                 if (!msgBackFailed.isEmpty()) {
                     consumeRequest.getMsgs().removeAll(msgBackFailed);
-
+                    //重试
                     this.submitConsumeRequestLater(msgBackFailed, consumeRequest.getProcessQueue(), consumeRequest.getMessageQueue());
                 }
                 break;
@@ -308,7 +312,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 break;
         }
 
+        // 返回的偏移量是移除该批消息之后最小的偏移量
         long offset = consumeRequest.getProcessQueue().removeMessage(consumeRequest.getMsgs());
+        // 更新偏移量
         if (offset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
             this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), offset, true);
         }
@@ -388,7 +394,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 return;
             }
 
-            //类名.this:一般用于内部类需要使用其外部类的实例对象时候使用 ClassName.this 代表其外部类对象，直接写this则代表内部类本身对象
+            // 类名.this:一般用于内部类需要使用其外部类的实例对象时候使用 ClassName.this 代表其外部类对象，直接写this则代表内部类本身对象
+            // 订阅指定的org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl.start方法，
+            // 将订阅信息调用org.apache.rocketmq.client.impl.factory.MQClientInstance.registerConsumer注册
             MessageListenerConcurrently listener = ConsumeMessageConcurrentlyService.this.messageListener;
             ConsumeConcurrentlyContext context = new ConsumeConcurrentlyContext(messageQueue);
             ConsumeConcurrentlyStatus status = null;
@@ -419,6 +427,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                         MessageAccessor.setConsumeStartTimeStamp(msg, String.valueOf(System.currentTimeMillis()));
                     }
                 }
+                //listener执行
                 status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
             } catch (Throwable e) {
                 log.warn("consumeMessage exception: {} Group: {} Msgs: {} MQ: {}",
@@ -464,6 +473,10 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             ConsumeMessageConcurrentlyService.this.getConsumerStatsManager()
                 .incConsumeRT(ConsumeMessageConcurrentlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
 
+            // 执行业务消息消费后，在处理结果前再次验证一下ProcessQueue的isDroped状态值，
+            // 如果设置为 true，将不对结果进行处理，也就是说如果在消息消费过程中进入到
+            // Step4 时，如果由于由新的消费者加入或原先的消费者出现若机导致原先分给消费者的队列
+            // 在负载之后分配给别的消费者，那么在应用程序的角度来看的话，消息会被重复消费
             if (!processQueue.isDropped()) {
                 ConsumeMessageConcurrentlyService.this.processConsumeResult(status, context, this);
             } else {

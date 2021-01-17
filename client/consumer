@@ -1,0 +1,15 @@
+调用流程
+1、MQClientInstane.start启动
+2、pullMessageservice.start启动消费
+3、pullRequest.take:开始获取消费请求，进行处理【获取不到就阻塞】
+    请求队列是在reblance放进去，或者消费成功之后继续放进去
+4、take获取任务之后处理：pullMessage
+    a、根据group获取从consumerTable中获取consumer
+    b、consumerTable在org.apache.rocketmq.client.impl.factory.MQClientInstance.registerConsumer中添加的
+    c、org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl.start添加消费者的时候指定
+
+------------------------------------------------------------
+pullmessage异步处理流程
+1、消费之后放到processQueue
+2、org.apache.rocketmq.client.impl.consumer.ConsumeMessageConcurrentlyService.submitConsumeRequest提交到线程池中消费
+3、使用指定的listener处理【org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl.start 获取订阅的内容中指定了消费的类】
