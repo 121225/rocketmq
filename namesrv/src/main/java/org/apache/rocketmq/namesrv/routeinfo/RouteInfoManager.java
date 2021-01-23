@@ -112,16 +112,19 @@ public class RouteInfoManager {
         try {
             try {
                 this.lock.writeLock().lockInterruptibly();
-
+                //更新此broker的集群信息在nameServer中。得到此集群已有的broker集合
                 Set<String> brokerNames = this.clusterAddrTable.get(clusterName);
                 if (null == brokerNames) {
                     brokerNames = new HashSet<String>();
                     this.clusterAddrTable.put(clusterName, brokerNames);
                 }
+                //如果集群不存在则创建此集群，因为用的是set集合，如果存在自动去重，不存在则加入
                 brokerNames.add(brokerName);
-
+                //默认设置为不是第一次注册，通过后面的条件判断是否为第一次注册
                 boolean registerFirst = false;
-
+                //从broker地址表中根据brokerName得到对应的brokerData，如果说不同集群brokerName一致
+                //就会导致出错，如果集群1中有个brokerName为broker1，且之前就已经注册成功了，集群2中有个brokername也为broker1那么问题
+                //就来了，就会将之前集群1的broker的地址brokerAddr覆盖掉，造成严重的混了，且心跳测试为30s一次，就会不停地更换
                 BrokerData brokerData = this.brokerAddrTable.get(brokerName);
                 if (null == brokerData) {
                     registerFirst = true;
