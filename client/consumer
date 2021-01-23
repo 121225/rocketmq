@@ -10,6 +10,26 @@
 
 ------------------------------------------------------------
 pullmessage异步处理流程
-1、消费之后放到processQueue
+1、消费之后放到processQueue，循环拉取
 2、org.apache.rocketmq.client.impl.consumer.ConsumeMessageConcurrentlyService.submitConsumeRequest提交到线程池中消费
 3、使用指定的listener处理【org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl.start 获取订阅的内容中指定了消费的类】
+
+------------------------------------------------------------
+消息消费之后结果处理入口
+1、org.apache.rocketmq.client.impl.consumer.ConsumeMessageConcurrentlyService.processConsumeResult
+2、处理失败的消息重新发送会broker
+    client更新offset：
+        更新内存中offsetTable
+        定时任务org.apache.rocketmq.client.impl.factory.MQClientInstance.persistAllConsumerOffset定时更新broker
+    broker更新offset：消息到broker持久化时，是否有判断进度只能增加：没有判断，值写了告警日志
+        将客户端的请求的数据更新到内存
+        定时任务将数据持久化到文件：org.apache.rocketmq.common.ConfigManager.persist
+3、消费完之后没有及时将offset更新到broker，发生了负载均衡，将broker重新负载给新的消费者，会出现重复消费的问题
+
+------------------------------------------------------------
+offset管理：
+1、reblance新增加的消费队列，从broker中获取offset作为首次拉取消息的offset，如果获取不到，代表是新的队列，根据定义的消费的起点类型
+2、
+
+
+分析公司broker扩容问题

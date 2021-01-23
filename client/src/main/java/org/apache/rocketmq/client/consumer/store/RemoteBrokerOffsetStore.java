@@ -55,6 +55,13 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     public void load() {
     }
 
+    /**
+     * 将offset更新到内存中就返回了，并没有向broker端提交，具体提交逻辑在persistAll中
+     * persistAll是一个定时调度，在org.apache.rocketmq.client.impl.factory.MQClientInstance#start()中启动org.apache.rocketmq.client.impl.factory.MQClientInstance#startScheduledTask()
+     * @param mq
+     * @param offset
+     * @param increaseOnly
+     */
     @Override
     public void updateOffset(MessageQueue mq, long offset, boolean increaseOnly) {
         if (mq != null) {

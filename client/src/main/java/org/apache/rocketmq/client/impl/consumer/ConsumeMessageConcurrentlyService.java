@@ -295,6 +295,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 List<MessageExt> msgBackFailed = new ArrayList<MessageExt>(consumeRequest.getMsgs().size());
                 for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
                     MessageExt msg = consumeRequest.getMsgs().get(i);
+                    //不是更新进度，发回到broker重试，从ack往后的要重试
                     boolean result = this.sendMessageBack(msg, context);
                     if (!result) {
                         msg.setReconsumeTimes(msg.getReconsumeTimes() + 1);
@@ -316,6 +317,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         long offset = consumeRequest.getProcessQueue().removeMessage(consumeRequest.getMsgs());
         // 更新偏移量
         if (offset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
+            //org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl.start中根据不同的消息模式设置了不同offset更新模式
             this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), offset, true);
         }
     }

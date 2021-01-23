@@ -371,14 +371,17 @@ public abstract class RebalanceImpl {
         //启动新增加的消费队列
         List<PullRequest> pullRequestList = new ArrayList<PullRequest>();
         for (MessageQueue mq : mqSet) {
+            //新增加的队列
             if (!this.processQueueTable.containsKey(mq)) {
+                //顺序消费需要一个释放锁了，另一个才可以处理
                 if (isOrder && !this.lock(mq)) {
                     log.warn("doRebalance, {}, add a new mq failed, {}, because lock failed", consumerGroup, mq);
                     continue;
                 }
-
+                //新增的删除之前保存的offset
                 this.removeDirtyOffset(mq);
                 ProcessQueue pq = new ProcessQueue();
+                //获取消费offset
                 long nextOffset = this.computePullFromWhere(mq);
                 if (nextOffset >= 0) {
                     ProcessQueue pre = this.processQueueTable.putIfAbsent(mq, pq);
