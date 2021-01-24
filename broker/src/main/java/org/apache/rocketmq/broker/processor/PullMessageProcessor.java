@@ -89,6 +89,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
         return false;
     }
 
+    //处理请求
     private RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend)
         throws RemotingCommandException {
         RemotingCommand response = RemotingCommand.createResponseCommand(PullMessageResponseHeader.class);
@@ -415,6 +416,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
                         }
 
                         String topic = requestHeader.getTopic();
+                        //获取请求的offset
                         long offset = requestHeader.getQueueOffset();
                         int queueId = requestHeader.getQueueId();
                         PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills,
@@ -581,6 +583,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
                 }
             }
         };
+        //异步线程拉取消息
         this.brokerController.getPullMessageExecutor().submit(new RequestTask(run, channel, request));
     }
 

@@ -29,7 +29,10 @@ pullmessage异步处理流程
 ------------------------------------------------------------
 offset管理：
 1、reblance新增加的消费队列，从broker中获取offset作为首次拉取消息的offset，如果获取不到，代表是新的队列，根据定义的消费的起点类型
-2、
+    org.apache.rocketmq.client.impl.consumer.RebalanceImpl.updateProcessQueueTableInRebalance
+2、首次消费队列的pullRest，先校正offset
+    org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl.pullMessage
+3、每一次拉取之后，返回下一次拉取的起点，nextOffset
 
 
 分析公司broker扩容问题

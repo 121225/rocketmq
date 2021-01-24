@@ -1,0 +1,4 @@
+broker处理消息拉取请求入口
+1、org.apache.rocketmq.broker.longpolling.PullRequestHoldService.run
+2、每次拉取消息之后，会根据当前拉取的消息返回下一次消息拉取的偏移量
+3、broker消息偏移量不对会校正

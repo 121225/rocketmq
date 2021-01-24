@@ -494,10 +494,12 @@ public class ConsumeQueue {
         if (offset >= this.getMinLogicOffset()) {
             MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset);
             if (mappedFile != null) {
+                //从mappedFile中获取数据
                 SelectMappedBufferResult result = mappedFile.selectMappedBuffer((int) (offset % mappedFileSize));
                 return result;
             }
         }
+        //偏移量小于队列中对小的偏移量
         return null;
     }
 
@@ -523,6 +525,7 @@ public class ConsumeQueue {
         this.minLogicOffset = minLogicOffset;
     }
 
+    //下一页起始的偏移量
     public long rollNextFile(final long index) {
         int mappedFileSize = this.mappedFileSize;
         int totalUnitsInFile = mappedFileSize / CQ_STORE_UNIT_SIZE;

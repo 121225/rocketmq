@@ -269,6 +269,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             }
         } else {
             if (processQueue.isLocked()) {
+                //首次消费该队列，校正offset
                 if (!pullRequest.isLockedFirst()) {
                     final long offset = this.rebalanceImpl.computePullFromWhere(pullRequest.getMessageQueue());
                     boolean brokerBusy = offset < pullRequest.getNextOffset();
@@ -308,6 +309,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
                     switch (pullResult.getPullStatus()) {
                         case FOUND:
+                            //上一次请求的偏移量
                             long prevRequestOffset = pullRequest.getNextOffset();
                             //返回下一次拉取消息的起点
                             pullRequest.setNextOffset(pullResult.getNextBeginOffset());
