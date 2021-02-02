@@ -36,15 +36,26 @@ public class FilterAPI {
         return simple;
     }
 
+    /**
+     * 构建订阅消息
+     * @param consumerGroup
+     * @param topic
+     * @param subString
+     * @return
+     * @throws Exception
+     */
     public static SubscriptionData buildSubscriptionData(final String consumerGroup, String topic,
         String subString) throws Exception {
+        //默认为消息过滤表达式
         SubscriptionData subscriptionData = new SubscriptionData();
         subscriptionData.setTopic(topic);
         subscriptionData.setSubString(subString);
 
+        //全部订阅
         if (null == subString || subString.equals(SubscriptionData.SUB_ALL) || subString.length() == 0) {
             subscriptionData.setSubString(SubscriptionData.SUB_ALL);
         } else {
+            //解析消息过滤表达式
             String[] tags = subString.split("\\|\\|");
             if (tags.length > 0) {
                 for (String tag : tags) {

@@ -742,6 +742,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
             Set<String> registerTopics = this.defaultMQPullConsumer.getRegisterTopics();
             if (registerTopics != null) {
                 for (final String topic : registerTopics) {
+                    //处理订阅消息
                     SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(this.defaultMQPullConsumer.getConsumerGroup(),
                         topic, SubscriptionData.SUB_ALL);
                     this.rebalanceImpl.getSubscriptionInner().put(topic, subscriptionData);
