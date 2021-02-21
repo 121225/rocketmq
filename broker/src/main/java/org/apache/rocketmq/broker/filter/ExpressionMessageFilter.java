@@ -57,6 +57,12 @@ public class ExpressionMessageFilter implements MessageFilter {
         }
     }
 
+    /**
+     * consumeQueue只判断hashCode是否匹配
+     * @param tagsCode tagsCode
+     * @param cqExtUnit extend unit of consume queue
+     * @return
+     */
     @Override
     public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
         if (null == subscriptionData) {
@@ -67,7 +73,7 @@ public class ExpressionMessageFilter implements MessageFilter {
             return true;
         }
 
-        // by tags code.
+        // tag过滤
         if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
 
             if (tagsCode == null) {
@@ -78,6 +84,7 @@ public class ExpressionMessageFilter implements MessageFilter {
                 return true;
             }
 
+            //判断hashcode是否匹配
             return subscriptionData.getCodeSet().contains(tagsCode.intValue());
         } else {
             // no expression or no bloom
@@ -93,6 +100,7 @@ public class ExpressionMessageFilter implements MessageFilter {
             }
 
             byte[] filterBitMap = cqExtUnit.getFilterBitMap();
+            //布隆过滤器
             BloomFilter bloomFilter = this.consumerFilterManager.getBloomFilter();
             if (filterBitMap == null || !this.bloomDataValid
                 || filterBitMap.length * Byte.SIZE != consumerFilterData.getBloomFilterData().getBitNum()) {
@@ -114,6 +122,14 @@ public class ExpressionMessageFilter implements MessageFilter {
         return true;
     }
 
+    /**
+     * ConsumeQueue过滤通过，从commitLog加载，根据属性过滤，该方法主要针对SQL过滤的场景
+     * isMatchedByCommitLog 只为 ExpressionType.SQL92 服务。
+     * 为什么 SQL92 是基于 SQL 表达式，但里面的属性来源于消息体，故需要从 commitlog中解析消息体，并得到tag,然后进行匹配
+     * @param msgBuffer message buffer in commit log, may be null if not invoked in store.
+     * @param properties message properties, should decode from buffer if null by yourself.
+     * @return
+     */
     @Override
     public boolean isMatchedByCommitLog(ByteBuffer msgBuffer, Map<String, String> properties) {
         if (subscriptionData == null) {
@@ -137,6 +153,7 @@ public class ExpressionMessageFilter implements MessageFilter {
             return true;
         }
 
+        //从消息体中解码出属性
         if (tempProperties == null && msgBuffer != null) {
             tempProperties = MessageDecoder.decodeProperties(msgBuffer);
         }
@@ -144,7 +161,7 @@ public class ExpressionMessageFilter implements MessageFilter {
         Object ret = null;
         try {
             MessageEvaluationContext context = new MessageEvaluationContext(tempProperties);
-
+            //然后对表达式进行匹配，上下文环境为消息体中的属性，如果匹配，则返回true,否则返回false。
             ret = realFilterData.getCompiledExpression().evaluate(context);
         } catch (Throwable e) {
             log.error("Message Filter error, " + realFilterData + ", " + tempProperties, e);

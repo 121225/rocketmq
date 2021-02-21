@@ -150,13 +150,17 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
             return response;
         }
 
+        //根据主题、消息过滤表达式构建订阅消息体。如果不是tag模式，构建过滤数据ConsumeFilterData。
         SubscriptionData subscriptionData = null;
         ConsumerFilterData consumerFilterData = null;
+        //是否有子订阅模式
         if (hasSubscriptionFlag) {
             try {
+                //根据消费组，订阅模式，消息过滤模式构建订阅模式SubscriptionData
                 subscriptionData = FilterAPI.build(
                     requestHeader.getTopic(), requestHeader.getSubscription(), requestHeader.getExpressionType()
                 );
+                //针对SQL92模式
                 if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
                     consumerFilterData = ConsumerFilterManager.build(
                         requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getSubscription(),
@@ -221,6 +225,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
             }
         }
 
+        //可以看出，如果消息过滤模式为 SQL92 ，则必须在broker端开启 enablePropertyFilter=true
         if (!ExpressionType.isTagType(subscriptionData.getExpressionType())
             && !this.brokerController.getBrokerConfig().isEnablePropertyFilter()) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -228,6 +233,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
             return response;
         }
 
+        //构建消息过滤对象，ExpressionForRetryMessageFilt町，支持对重试主题的过滤， ExpressionMessageFilter ，不支持对重试主题的属性过滤 ，也就 如果是 tag 模式，执isMatchedByCommitLog 方法将直接返回 true
         MessageFilter messageFilter;
         if (this.brokerController.getBrokerConfig().isFilterSupportRetry()) {
             messageFilter = new ExpressionForRetryMessageFilter(subscriptionData, consumerFilterData,

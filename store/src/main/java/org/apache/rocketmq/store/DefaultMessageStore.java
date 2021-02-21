@@ -1264,6 +1264,15 @@ public class DefaultMessageStore implements MessageStore {
         return logic;
     }
 
+    /**
+     * 1）如果是主节点，或者是从节点但开启了offsetCheckSlave的话，使用newOffset
+     * 2）如果是从节点，并不开启 offsetCheckSlave,则使用原先的 offset,
+     * 因为考虑到主从同步延迟的因素，导致从节点consumequeue并没有同步到数据。
+     * offsetCheckInSlave设置为false保险点，当然默认该值为false。返回状态码： NO_MESSAGE_IN_QUEUE。
+     * @param oldOffset
+     * @param newOffset
+     * @return
+     */
     private long nextOffsetCorrection(long oldOffset, long newOffset) {
         long nextOffset = oldOffset;
         if (this.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE || this.getMessageStoreConfig().isOffsetCheckInSlave()) {
