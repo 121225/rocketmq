@@ -272,6 +272,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
 
             if (this.brokerController.getBrokerConfig().isSlaveReadEnable()) {
                 // consume too slow ,redirect to another machine
+                //消费不过来，设置从从节点读取，可以通过客户端命令updateSubGroup配置当主服务器繁忙时，建议从哪个从服务器读取消息
                 if (getMessageResult.isSuggestPullingFromSlave()) {
                     responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getWhichBrokerWhenConsumeSlowly());
                 }

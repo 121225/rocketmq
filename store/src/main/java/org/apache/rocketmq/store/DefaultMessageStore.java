@@ -706,6 +706,7 @@ public class DefaultMessageStore implements MessageStore {
                         //下一次获取的起始偏移量等于原来的偏移量+现在获取的数据
                         nextBeginOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
 
+                        //主服务器繁忙，设置从从节点读取数据
                         long diff = maxOffsetPy - maxPhyOffsetPulling;
                         long memory = (long) (StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE
                             * (this.messageStoreConfig.getAccessMessageInMemoryMaxRatio() / 100.0));

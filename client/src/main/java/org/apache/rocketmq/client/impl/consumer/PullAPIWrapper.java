@@ -117,6 +117,11 @@ public class PullAPIWrapper {
         return pullResult;
     }
 
+    /**
+     * 根据服务端返回的建议的下次拉取的broker，更新本地的pullFromWhichNodeTable
+     * @param mq
+     * @param brokerId
+     */
     public void updatePullFromWhichNode(final MessageQueue mq, final long brokerId) {
         AtomicLong suggest = this.pullFromWhichNodeTable.get(mq);
         if (null == suggest) {
@@ -195,6 +200,7 @@ public class PullAPIWrapper {
             requestHeader.setExpressionType(expressionType);
 
             String brokerAddr = findBrokerResult.getBrokerAddr();
+            //如果使用了类过滤消息模式，将改变拉取地址为FilterServer地址
             if (PullSysFlag.hasClassFilterFlag(sysFlagInner)) {
                 brokerAddr = computePullFromWhichFilterServer(mq.getTopic(), brokerAddr);
             }
@@ -217,6 +223,9 @@ public class PullAPIWrapper {
             return this.defaultBrokerId;
         }
 
+        // 原来消息消费拉取线程PullMessageService根据PullRequest请求从主服务器拉取消息后会返回下一次建议拉取的brokerId，
+        // 消息消费者线程在收到消息后，会根据主服务器的建议拉取brokerId来更新pullFromWhichNodeTable，
+        // 消息消费者线程更新pullFromWhichNodeTable
         AtomicLong suggest = this.pullFromWhichNodeTable.get(mq);
         if (suggest != null) {
             return suggest.get();
@@ -225,6 +234,10 @@ public class PullAPIWrapper {
         return MixAll.MASTER_ID;
     }
 
+    /**
+     * 类过滤模式，计算拉取的地址
+     * 从该Broker中的FilterServer地址列表中，随机选择一个，进行拉取。
+     */
     private String computePullFromWhichFilterServer(final String topic, final String brokerAddr)
         throws MQClientException {
         ConcurrentMap<String, TopicRouteData> topicRouteTable = this.mQClientFactory.getTopicRouteTable();

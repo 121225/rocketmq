@@ -12,3 +12,15 @@ broker处理消息拉取请求入口
 定时消息入口：
 1、org.apache.rocketmq.store.schedule.ScheduleMessageService
 2、org.apache.rocketmq.store.schedule.ScheduleMessageService.DeliverDelayedMessageTimerTask.executeOnTimeup【核心方法】
+
+------------------------------------------------------------------
+类过滤
+1、订阅消息与FilterServer注册流程
+
+消息消费者 先用类过滤模式将过滤器类，过滤器类内容 添加到订阅消息中（RebalanceImpl)。
+消费者拉取消息时，向FilterServer发送请求，那FilterServer怎么得到FilterServer服务器地址呢？通过主题路由信息，向NameServer获取。消费者在得到FilterServervf服务地址的时候，会将自己过滤器类代码发送到FilterServer,方便FilterServer在拉取消息时执行过滤逻辑。
+FilterServer启动时向Broker注册Filter服务地址信息。（服务列表），然后Broker将该信息通过心跳向NameServer注册，将FilterServer服务列表保存在主题的路由信息中。
+2、clientUploadFilterClassEnable 参数，如果设置为false, 则需要一个url，去下载过滤类：url/classname.java 这样的请求，FilterServer要能拿到过滤类代码。
+
+3、类过滤模式，上传的类必须实现MessageFilter接口。
+

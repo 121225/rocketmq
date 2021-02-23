@@ -52,6 +52,11 @@ public class FilterServerManager {
 
     public void start() {
 
+        /**
+         * FilterServer与Broker通过心跳维持FilterServer在Broker端的注册
+         * Broker为了避免broker端FilterServer进程的个数越来越少，每30s检测当前存活的FilterServer进程个数，
+         * 如果当前存活的FilterServer进程个数小于配置的数量，则自动创建一个FilterServer进程
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {

@@ -1055,6 +1055,7 @@ public class MQClientInstance {
                 found = brokerAddr != null;
             }
 
+            //从当前broker中找不到，找同一个brokerName下的其他brokerId
             if (!found && !onlyThisBroker) {
                 Entry<Long, String> entry = map.entrySet().iterator().next();
                 brokerAddr = entry.getValue();
