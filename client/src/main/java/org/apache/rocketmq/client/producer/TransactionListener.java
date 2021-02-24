@@ -26,6 +26,10 @@ public interface TransactionListener {
      * @param msg Half(prepare) message
      * @param arg Custom business parameter
      * @return Transaction state
+     * 发送prepare消息成功此方法被回调，该方法用于执行本地事务
+     * - @param msg 回传的消息，利用transactionId即可获取到该消息的唯一Id
+     * - @param arg 调用send方法时传递的参数，当send时候若有额外的参数可以传递到send方法中，这里能获取到
+     * - @return 返回事务状态，COMMIT：提交 ROLLBACK：回滚 UNKNOW：回调
      */
     LocalTransactionState executeLocalTransaction(final Message msg, final Object arg);
 
@@ -35,6 +39,9 @@ public interface TransactionListener {
      *
      * @param msg Check message
      * @return Transaction state
+     *
+     * msg 通过获取transactionId来判断这条消息的本地事务执行状态
+     * - @return 返回事务状态，COMMIT：提交 ROLLBACK：回滚 UNKNOW：回调
      */
     LocalTransactionState checkLocalTransaction(final MessageExt msg);
 }

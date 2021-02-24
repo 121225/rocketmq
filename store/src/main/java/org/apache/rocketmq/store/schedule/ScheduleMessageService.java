@@ -305,12 +305,15 @@ public class ScheduleMessageService extends ConfigManager {
                             }
 
                             long now = System.currentTimeMillis();
+                            //下一条消息的发送时间
                             long deliverTimestamp = this.correctDeliverTimestamp(now, tagsCode);
 
                             nextOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
 
+                            //下一次定时任务要执行的时间
                             long countdown = deliverTimestamp - now;
 
+                            //现在需要执行，有消息需要消费
                             if (countdown <= 0) {
                                 //根据消息物理偏移量和消息大小，从commitLog文件中查找消息
                                 MessageExt msgExt =
@@ -360,6 +363,7 @@ public class ScheduleMessageService extends ConfigManager {
                                     }
                                 }
                             } else {
+                                //当前消息已消费完，设定下一次的时间
                                 ScheduleMessageService.this.timer.schedule(
                                     new DeliverDelayedMessageTimerTask(this.delayLevel, nextOffset),
                                     countdown);
@@ -367,7 +371,7 @@ public class ScheduleMessageService extends ConfigManager {
                                 return;
                             }
                         } // end of for
-
+                        //一批消息处理完，间隔0.1s再处理
                         nextOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
                         ScheduleMessageService.this.timer.schedule(new DeliverDelayedMessageTimerTask(
                             this.delayLevel, nextOffset), DELAY_FOR_A_WHILE);
